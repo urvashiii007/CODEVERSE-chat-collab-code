@@ -1,3 +1,4 @@
+/*
 @import url("tldraw/tldraw.css");
 
 @tailwind base;
@@ -56,6 +57,7 @@ body {
 
 /* Editor */
 
+/*
 .cm-editor {
     max-height: 93vh;
 }
@@ -63,6 +65,7 @@ body {
 .cm-editor .cm-scroller {
     font-family: "Space Mono", monospace;
     /* min-height: 100vh; */
+    /*
 }
 
 select {
@@ -81,4 +84,118 @@ select {
         min-height: calc(93vh - 60px);
     }
 }
+*/
 
+
+@import url("tldraw/tldraw.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   GLOBAL RESET (IMPORTANT)
+========================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+/* =========================
+   CUSTOM COMPONENTS
+========================= */
+@layer components {
+    .view-title {
+        @apply mb-2 w-full border-b pb-2 text-start text-lg;
+    }
+}
+
+/* =========================
+   BODY STYLES
+========================= */
+body {
+    font-family: "Space Grotesk", sans-serif;
+
+    --sb-track-color: #3d404a;
+    --sb-thumb-color: #e1e1ffb3;
+    --sb-size: 6px;
+}
+
+/* =========================
+   SCROLLBAR
+========================= */
+::-webkit-scrollbar {
+    width: var(--sb-size);
+    height: var(--sb-size);
+}
+
+::-webkit-scrollbar-track {
+    background: var(--sb-track-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--sb-thumb-color);
+    border-radius: 5px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    body {
+        scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
+    }
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes up-down {
+    0% {
+        transform: translateY(-20px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+/* =========================
+   EDITOR FIX (VERY IMPORTANT)
+========================= */
+.cm-editor {
+    max-height: 93svh; /* ❌ vh → ✅ svh */
+}
+
+.cm-editor .cm-scroller {
+    font-family: "Space Mono", monospace;
+}
+
+/* =========================
+   SELECT FIX
+========================= */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+}
+
+/* =========================
+   MOBILE FIX
+========================= */
+@media screen and (max-width: 768px) {
+    .cm-editor {
+        max-height: calc(93svh - 60px);
+    }
+
+    .cm-editor .cm-scroller {
+        min-height: calc(93svh - 60px);
+    }
+}

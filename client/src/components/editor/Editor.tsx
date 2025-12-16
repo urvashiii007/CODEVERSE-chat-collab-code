@@ -7,18 +7,50 @@ import useResponsive from "@/hooks/useResponsive"
 import { editorThemes } from "@/resources/Themes"
 import { FileSystemItem } from "@/types/file"
 import { SocketEvent } from "@/types/socket"
+
 import { color } from "@uiw/codemirror-extensions-color"
 import { hyperLink } from "@uiw/codemirror-extensions-hyper-link"
-import { LanguageName, loadLanguage } from "@uiw/codemirror-extensions-langs"
+import { loadLanguage } from "@uiw/codemirror-extensions-langs"
+
 import CodeMirror, {
     Extension,
     ViewUpdate,
     scrollPastEnd,
 } from "@uiw/react-codemirror"
+
 import { EditorView } from "@codemirror/view"
 import { useEffect, useMemo, useState, useRef, useCallback } from "react"
 import toast from "react-hot-toast"
-import { collaborativeHighlighting, updateRemoteUsers } from "./collaborativeHighlighting"
+
+import {
+    collaborativeHighlighting,
+    updateRemoteUsers,
+} from "./collaborativeHighlighting"
+
+/* ---------------- LANGUAGE NORMALIZER ---------------- */
+
+function normalizeLanguage(lang: string): string | null {
+    const map: Record<string, string> = {
+        js: "js",
+        javascript: "js",
+        jsx: "jsx",
+        ts: "ts",
+        typescript: "ts",
+        tsx: "tsx",
+        html: "html",
+        css: "css",
+        json: "json",
+        py: "py",
+        python: "py",
+        java: "java",
+        c: "c",
+        cpp: "c++",
+    }
+
+    return map[lang?.toLowerCase()] ?? null
+}
+
+/* ---------------- EDITOR ---------------- */
 
 function Editor() {
     const { users, currentUser } = useAppContext()
@@ -26,16 +58,25 @@ function Editor() {
     const { theme, language, fontSize } = useSettings()
     const { socket } = useSocket()
     const { viewHeight } = useResponsive()
-    const [timeOut, setTimeOut] = useState(setTimeout(() => {}, 0))
+
     const filteredUsers = useMemo(
         () => users.filter((u) => u.username !== currentUser.username),
         [users, currentUser],
     )
+
     const [extensions, setExtensions] = useState<Extension[]>([])
     const editorRef = useRef<any>(null)
-    const [lastCursorPosition, setLastCursorPosition] = useState<number>(0)
-    const [lastSelection, setLastSelection] = useState<{start?: number, end?: number}>({})
+
+    const [timeOut, setTimeOut] = useState(setTimeout(() => {}, 0))
+    const [lastCursorPosition, setLastCursorPosition] = useState(0)
+    const [lastSelection, setLastSelection] = useState<{
+        start?: number
+        end?: number
+    }>({})
+
     const cursorMoveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    /* ---------------- CODE CHANGE ---------------- */
 
     const onCodeChange = (code: string, view: ViewUpdate) => {
         if (!activeFile) return
@@ -43,95 +84,103 @@ function Editor() {
         const file: FileSystemItem = { ...activeFile, content: code }
         setActiveFile(file)
 
-        // Get cursor position and selection range
         const selection = view.state?.selection?.main
         const cursorPosition = selection?.head || 0
         const selectionStart = selection?.from
         const selectionEnd = selection?.to
 
-        // Emit cursor and selection data
         socket.emit(SocketEvent.TYPING_START, {
             cursorPosition,
             selectionStart,
-            selectionEnd
+            selectionEnd,
         })
+
         socket.emit(SocketEvent.FILE_UPDATED, {
             fileId: activeFile.id,
             newContent: code,
         })
+
         clearTimeout(timeOut)
 
         const newTimeOut = setTimeout(
             () => socket.emit(SocketEvent.TYPING_PAUSE),
             1000,
         )
+
         setTimeOut(newTimeOut)
     }
 
-    // Handle cursor/selection changes without typing
-    const handleSelectionChange = useCallback((view: ViewUpdate) => {
-        if (!view.selectionSet) return
+    /* ---------------- CURSOR MOVE ---------------- */
 
-        const selection = view.state?.selection?.main
-        const cursorPosition = selection?.head || 0
-        const selectionStart = selection?.from
-        const selectionEnd = selection?.to
+    const handleSelectionChange = useCallback(
+        (view: ViewUpdate) => {
+            if (!view.selectionSet) return
 
-        // Check if cursor or selection actually changed
-        const cursorChanged = cursorPosition !== lastCursorPosition
-        const selectionChanged = selectionStart !== lastSelection.start || selectionEnd !== lastSelection.end
+            const selection = view.state?.selection?.main
+            const cursorPosition = selection?.head || 0
+            const selectionStart = selection?.from
+            const selectionEnd = selection?.to
 
-        if (cursorChanged || selectionChanged) {
-            setLastCursorPosition(cursorPosition)
-            setLastSelection({ start: selectionStart, end: selectionEnd })
+            const cursorChanged = cursorPosition !== lastCursorPosition
+            const selectionChanged =
+                selectionStart !== lastSelection.start ||
+                selectionEnd !== lastSelection.end
 
-            // Clear existing timeout
-            if (cursorMoveTimeoutRef.current) {
-                clearTimeout(cursorMoveTimeoutRef.current)
+            if (cursorChanged || selectionChanged) {
+                setLastCursorPosition(cursorPosition)
+                setLastSelection({ start: selectionStart, end: selectionEnd })
+
+                if (cursorMoveTimeoutRef.current) {
+                    clearTimeout(cursorMoveTimeoutRef.current)
+                }
+
+                cursorMoveTimeoutRef.current = setTimeout(() => {
+                    socket.emit(SocketEvent.CURSOR_MOVE, {
+                        cursorPosition,
+                        selectionStart,
+                        selectionEnd,
+                    })
+                }, 100)
             }
+        },
+        [lastCursorPosition, lastSelection, socket],
+    )
 
-            // Debounce cursor move events
-            cursorMoveTimeoutRef.current = setTimeout(() => {
-                socket.emit(SocketEvent.CURSOR_MOVE, {
-                    cursorPosition,
-                    selectionStart,
-                    selectionEnd
-                })
-            }, 100) // 100ms debounce
-        }
-    }, [lastCursorPosition, lastSelection, socket])
-
-    // Listen wheel event to zoom in/out and prevent page reload
     usePageEvents()
 
+    /* ---------------- EXTENSIONS ---------------- */
+
     useEffect(() => {
-        const extensions = [
+        const exts: Extension[] = [
             color,
             hyperLink,
             collaborativeHighlighting(),
             EditorView.updateListener.of(handleSelectionChange),
             scrollPastEnd(),
         ]
-        const langExt = loadLanguage(language.toLowerCase() as LanguageName)
+
+        const normalizedLang = normalizeLanguage(language)
+        const langExt = normalizedLang
+            ? loadLanguage(normalizedLang as any)
+            : null
+
         if (langExt) {
-            extensions.push(langExt)
+            exts.push(langExt)
         } else {
-            toast.error(
-                "Syntax highlighting is unavailable for this language. Please adjust the editor settings; it may be listed under a different name.",
-                {
-                    duration: 5000,
-                },
-            )
+            toast.error("Syntax highlighting unavailable", {
+                id: "syntax-error",
+            })
         }
 
-        setExtensions(extensions)
+        setExtensions(exts)
     }, [filteredUsers, language, handleSelectionChange])
 
-    // Update remote users when filteredUsers changes
+    /* ---------------- REMOTE USERS ---------------- */
+
     useEffect(() => {
         if (editorRef.current?.view) {
             editorRef.current.view.dispatch({
-                effects: updateRemoteUsers.of(filteredUsers)
+                effects: updateRemoteUsers.of(filteredUsers),
             })
         }
     }, [filteredUsers])
@@ -140,8 +189,8 @@ function Editor() {
         <CodeMirror
             ref={editorRef}
             theme={editorThemes[theme]}
-            onChange={onCodeChange}
             value={activeFile?.content}
+            onChange={onCodeChange}
             extensions={extensions}
             minHeight="100%"
             maxWidth="100vw"

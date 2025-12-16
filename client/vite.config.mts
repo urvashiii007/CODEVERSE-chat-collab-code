@@ -2,9 +2,12 @@ import react from "@vitejs/plugin-react"
 import { fileURLToPath, URL } from "url"
 import { defineConfig } from "vite"
 
-// https://vitejs.dev/config/
 export default defineConfig({
     plugins: [react()],
+
+    // 🔴 MOST IMPORTANT FIX
+    base: "/", // REQUIRED for Vercel (preview vs deploy fix)
+
     build: {
         chunkSizeWarningLimit: 1600,
         rollupOptions: {
@@ -15,24 +18,23 @@ export default defineConfig({
                             .toString()
                             .split("node_modules/")[1]
                             .split("/")[0]
-                            .toString()
                     }
                 },
             },
         },
     },
+
     resolve: {
-        alias: [
-            {
-                find: "@",
-                replacement: fileURLToPath(new URL("./src", import.meta.url)),
-            },
-        ],
+        alias: {
+            "@": fileURLToPath(new URL("./src", import.meta.url)),
+        },
     },
+
     preview: {
-        port: 5173
+        port: 5173,
     },
-    server:{
+
+    server: {
         open: true,
-    }
+    },
 })

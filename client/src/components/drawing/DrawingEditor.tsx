@@ -1,3 +1,4 @@
+/*
 import { useAppContext } from "@/context/AppContext"
 import { useSocket } from "@/context/SocketContext"
 import useWindowDimensions from "@/hooks/useWindowDimensions"
@@ -85,6 +86,105 @@ function ReachEditor() {
         handleRemoteDrawing,
         socket,
     ])
+
+    return null
+}
+
+export default DrawingEditor
+*/
+
+
+import { useAppContext } from "@/context/AppContext"
+import { useSocket } from "@/context/SocketContext"
+import useWindowDimensions from "@/hooks/useWindowDimensions"
+import { SocketEvent } from "@/types/socket"
+import { useCallback, useEffect } from "react"
+import {
+    HistoryEntry,
+    RecordsDiff,
+    TLRecord,
+    Tldraw,
+    useEditor,
+} from "tldraw"
+
+function DrawingEditor() {
+    const { isMobile } = useWindowDimensions()
+
+    return (
+        <Tldraw
+            inferDarkMode
+            forceMobile={isMobile}
+            defaultName="Editor"
+            className="z-0"
+        >
+            <ReachEditor />
+        </Tldraw>
+    )
+}
+
+function ReachEditor() {
+    const editor = useEditor()
+    const { drawingData, setDrawingData } = useAppContext()
+    const { socket } = useSocket()
+
+    // 🔥 FIX 1: Type mismatch safe-casted
+    const handleChangeEvent = useCallback(
+        (change: HistoryEntry<TLRecord>) => {
+            const snapshot = change.changes
+
+            // Store snapshot safely (tldraw version mismatch fix)
+            setDrawingData(editor.store.getSnapshot() as any)
+
+            // Emit only diff to server
+            socket.emit(SocketEvent.DRAWING_UPDATE, { snapshot })
+        },
+        [editor, setDrawingData, socket],
+    )
+
+    // 🔥 FIX 2: Remote drawing safe merge
+    const handleRemoteDrawing = useCallback(
+        ({ snapshot }: { snapshot: RecordsDiff<TLRecord> }) => {
+            editor.store.mergeRemoteChanges(() => {
+                const { added, updated, removed } = snapshot
+
+                for (const record of Object.values(added)) {
+                    editor.store.put([record])
+                }
+
+                for (const [, to] of Object.values(updated)) {
+                    editor.store.put([to])
+                }
+
+                for (const record of Object.values(removed)) {
+                    editor.store.remove([record.id])
+                }
+            })
+
+            setDrawingData(editor.store.getSnapshot() as any)
+        },
+        [editor, setDrawingData],
+    )
+
+    // 🔥 FIX 3: Load snapshot with cast
+    useEffect(() => {
+        if (drawingData && Object.keys(drawingData).length > 0) {
+            editor.store.loadSnapshot(drawingData as any)
+        }
+    }, [drawingData, editor])
+
+    useEffect(() => {
+        const cleanupFunction = editor.store.listen(handleChangeEvent, {
+            source: "user",
+            scope: "document",
+        })
+
+        socket.on(SocketEvent.DRAWING_UPDATE, handleRemoteDrawing)
+
+        return () => {
+            cleanupFunction()
+            socket.off(SocketEvent.DRAWING_UPDATE, handleRemoteDrawing)
+        }
+    }, [editor, handleChangeEvent, handleRemoteDrawing, socket])
 
     return null
 }

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
+    "@tldraw/tldraw": "^4.2.1",
     "@uiw/codemirror-extensions-color": "^4.25.3",
     "@uiw/codemirror-extensions-hyper-link": "^4.25.3",
     "@uiw/codemirror-extensions-langs": "^4.25.3",
@@ -43,6 +44,9 @@
     "vscode-icons-js": "^11.6.1"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.17",
     "eslint": "^8.57.0",

@@ -36,50 +36,44 @@ import FormComponent from "@/components/forms/FormComponent"
 
 function HomePage() {
     return (
-        <div
-            className="
-                flex 
-                min-h-[100svh]
-                w-full
-                flex-col 
-                items-center 
-                justify-center 
-                bg-black 
-                text-white
-            "
-            style={{
-                backgroundImage: `url(${bgImage})`,
-                backgroundSize: "100% 100%",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-            }}
-        >
-            <div
-                className="
-                    mx-auto
-                    flex 
-                    w-full 
-                    max-w-7xl
-                    flex-col 
-                    items-center 
-                    justify-between 
-                    gap-12
-                    px-6
-                    sm:flex-row
-                "
-            >
-                {/* Left Illustration */}
-                <div className="flex w-full justify-center sm:w-1/2">
-                    <img
-                        src={illustration}
-                        alt="CodeVerse Collaboration Illustration"
-                        className="w-[260px] sm:w-[420px]"
-                    />
-                </div>
+        <div className="relative min-h-[100svh] w-full overflow-hidden bg-black">
+            {/* Background image layer */}
+            <img
+                src={bgImage}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+                loading="eager"
+            />
 
-                {/* Right Form */}
-                <div className="flex w-full justify-center sm:w-1/2">
-                    <FormComponent />
+            {/* Content layer */}
+            <div className="relative z-10 flex min-h-[100svh] flex-col items-center justify-center text-white">
+                <div
+                    className="
+                        mx-auto
+                        flex 
+                        w-full 
+                        max-w-7xl
+                        flex-col 
+                        items-center 
+                        justify-between 
+                        gap-12
+                        px-6
+                        sm:flex-row
+                    "
+                >
+                    {/* Left Illustration */}
+                    <div className="flex w-full justify-center sm:w-1/2">
+                        <img
+                            src={illustration}
+                            alt="CodeVerse Collaboration Illustration"
+                            className="w-[260px] sm:w-[420px]"
+                        />
+                    </div>
+
+                    {/* Right Form */}
+                    <div className="flex w-full justify-center sm:w-1/2">
+                        <FormComponent />
+                    </div>
                 </div>
             </div>
         </div>

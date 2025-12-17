@@ -6,7 +6,7 @@ export default defineConfig({
     plugins: [react()],
 
     // 🔴 MOST IMPORTANT FIX
-    base: "/", // REQUIRED for Vercel (preview vs deploy fix)
+    //base: "/", // REQUIRED for Vercel (preview vs deploy fix)
 
     build: {
         chunkSizeWarningLimit: 1600,

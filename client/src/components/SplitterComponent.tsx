@@ -1,8 +1,11 @@
 import { useViews } from "@/context/ViewContext"
 import useLocalStorage from "@/hooks/useLocalStorage"
 import useWindowDimensions from "@/hooks/useWindowDimensions"
-import { ReactNode } from "react"
+import type { ReactNode } from "react"
 import Split from "react-split"
+
+// ✅ react-split TS FIX
+const SplitAny = Split as unknown as React.FC<any>
 
 function SplitterComponent({ children }: { children: ReactNode }) {
     const { isSidebarOpen } = useViews()
@@ -46,7 +49,7 @@ function SplitterComponent({ children }: { children: ReactNode }) {
     })
 
     return (
-        <Split
+        <SplitAny
             sizes={getSizes()}
             minSize={getMinSizes()}
             gutter={getGutter}
@@ -61,8 +64,9 @@ function SplitterComponent({ children }: { children: ReactNode }) {
             className="flex h-screen min-h-screen max-w-full items-center justify-center overflow-hidden"
         >
             {children}
-        </Split>
+        </SplitAny>
     )
 }
 
 export default SplitterComponent
+

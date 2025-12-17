@@ -14,7 +14,7 @@ import {
     isFileExist,
 } from "@/utils/file"
 import { saveAs } from "file-saver"
-import JSZip from "jszip"
+import * as JSZip from "jszip"
 import {
     ReactNode,
     createContext,

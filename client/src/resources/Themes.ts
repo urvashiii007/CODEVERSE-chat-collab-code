@@ -1,3 +1,4 @@
+/*
 import { abcdef } from "@uiw/codemirror-themes-all"
 import { abyss } from "@uiw/codemirror-themes-all"
 import { androidstudio } from "@uiw/codemirror-themes-all"
@@ -91,4 +92,27 @@ export const editorThemes: EditorTheme = {
     "White Light": whiteLight,
     "Xcode Dark": xcodeDark,
     "Xcode Light": xcodeLight,
+}
+*/
+import type { Extension } from "@codemirror/state"
+
+
+// individual theme imports (Vite-safe)
+import { githubDark, githubLight } from "@uiw/codemirror-theme-github"
+import { dracula } from "@uiw/codemirror-theme-dracula"
+import { vscodeDark } from "@uiw/codemirror-theme-vscode"
+import { materialDark } from "@uiw/codemirror-theme-material"
+import { monokai } from "@uiw/codemirror-theme-monokai"
+
+interface EditorTheme {
+    [key: string]: any
+}
+
+export const editorThemes: EditorTheme = {
+    "GitHub Dark": githubDark,
+    "GitHub Light": githubLight,
+    Dracula: dracula,
+    "VS Code Dark": vscodeDark,
+    "Material Dark": materialDark,
+    Monokai: monokai,
 }

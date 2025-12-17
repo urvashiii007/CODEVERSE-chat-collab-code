@@ -1,14 +1,17 @@
-import { StoreSnapshot, TLRecord } from "@tldraw/tldraw"
 import { RemoteUser, User, USER_STATUS } from "./user"
 
-type DrawingData = StoreSnapshot<TLRecord> | null
+// ❌ tldraw types hata diye (problematic)
+// type DrawingData = StoreSnapshot<TLRecord> | null
 
-enum ACTIVITY_STATE {
+// ✅ SAFE fallback type
+export type DrawingData = any
+
+export enum ACTIVITY_STATE {
     CODING = "coding",
     DRAWING = "drawing",
 }
 
-interface AppContext {
+export interface AppContext {
     users: RemoteUser[]
     setUsers: (
         users: RemoteUser[] | ((users: RemoteUser[]) => RemoteUser[]),
@@ -22,6 +25,3 @@ interface AppContext {
     drawingData: DrawingData
     setDrawingData: (data: DrawingData) => void
 }
-
-export { ACTIVITY_STATE }
-export { AppContext, DrawingData }
